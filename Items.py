@@ -13,30 +13,31 @@ class Item(Resource):
     def find_item(cls,name):
         conn = sqlite3.connect("data.db")
         cur = conn.cursor()
-        res = cur.execute("SELECT * FROM Items WHERE name = ?", (name,))
+        row = cur.execute("SELECT * FROM Items WHERE name = ?", (name,))
+        res = row.fetchone()
         conn.close()
         if res:
             return {'item': {'name': res[0], 'price': res[1]}}, 200
 
     @jwt_required()
     def get(self, name):
-        result = Item.find_item(name)
+        result = self.find_item(name)
         if result:
-            print(result)
+            return result
         return {'message': 'item not found'}, 404
 
     def post(self, name):
         #if next(filter(lambda x: x['name'] == name, items), None):
             #return {'message':f'An item with the name ({name})already exists'}
-        result = Item.find_item(name)
-        if result is not None:
-            return {f"message":"An item with the name ({name}) already exists"}
+        result = self.find_item(name)
+        if result:
+            return {"message":"An item with the name already exists"}
         data = Item.parser.parse_args()
         item = {'name': name, 'price': data['price']}
 
         conn = sqlite3.connect("data.db")
         cur = conn.cursor()
-        cur.execute("INSERT INTO Items VALUES (?,?)", (name, data['price']))
+        cur.execute("INSERT INTO Items VALUES (?,?)", (name, data["price"]))
         conn.commit()
         conn.close()
 
@@ -51,14 +52,14 @@ class Item(Resource):
         return {"message": "item deleted"}
 
     def put(self,name):
-        result = Item.find_item(name)
+        result = self.find_item(name)
         data = Item.parser.parse_args()
 
         conn = sqlite3.connect("data.db")
         cur = conn.cursor()
         if result:
-            cur.execute("UPDATE Items SET price = ? WHERE name = ?", (data["price"], name))
-        cur.execute("INSERT INTO Items VALUES ?,?", (name ,data["price"]))
+            cur.execute("UPDATE Items SET price=? WHERE name=?", (data["price"], name))
+        cur.execute("INSERT INTO Items VALUES (?,?)", (name ,data["price"]))
         item = {'name': name, 'price': data['price']}
         conn.commit()
         conn.close()
