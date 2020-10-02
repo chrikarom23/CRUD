@@ -54,15 +54,18 @@ class Item(Resource):
     def put(self,name):
         result = self.find_item(name)
         data = Item.parser.parse_args()
+        item = {'name': name, 'price': data['price']}
 
         conn = sqlite3.connect("data.db")
         cur = conn.cursor()
         if result:
             cur.execute("UPDATE Items SET price=? WHERE name=?", (data["price"], name))
-        cur.execute("INSERT INTO Items VALUES (?,?)", (name ,data["price"]))
-        item = {'name': name, 'price': data['price']}
-        conn.commit()
-        conn.close()
+            conn.commit()
+            conn.close()
+        else:
+            cur.execute("INSERT INTO Items VALUES (?,?)", (name ,data["price"]))
+            conn.commit()
+            conn.close()
 
         return item, 201
 
